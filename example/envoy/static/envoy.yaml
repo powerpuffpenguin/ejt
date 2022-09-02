@@ -1,0 +1,85 @@
+admin:
+    access_log_path: /dev/stdout
+    address:
+        socket_address:
+            address: 0.0.0.0
+            port_value: 8080
+static_resources:
+    clusters:
+        - connect_timeout: 1s
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: google
+            endpoints:
+                - lb_endpoints:
+                    - endpoint:
+                        address:
+                            socket_address:
+                                address: www.google.com
+                                port_value: 80
+          name: google
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+                '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          type: LOGICAL_DNS
+        - connect_timeout: 1s
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: bing
+            endpoints:
+                - lb_endpoints:
+                    - endpoint:
+                        address:
+                            socket_address:
+                                address: www.bing.com
+                                port_value: 80
+          name: bing
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+                '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          type: LOGICAL_DNS
+    listeners:
+        - address:
+            socket_address:
+                address: 0.0.0.0
+                port_value: 80
+          filter_chains:
+            - filters:
+                - name: envoy.filters.network.http_connection_manager
+                  typed_config:
+                    '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                    access_log:
+                        - name: envoy.access_loggers.stdout
+                          typed_config:
+                            '@type': type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                    codec_type: AUTO
+                    http_filters:
+                        - name: envoy.filters.http.router
+                          typed_config:
+                            '@type': type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                    route_config:
+                        name: search_route
+                        virtual_hosts:
+                            - domains:
+                                - '*'
+                              name: service
+                              routes:
+                                - match:
+                                    headers:
+                                        - exact_match: google.com
+                                          name: :authority
+                                    prefix: /
+                                  route:
+                                    cluster: google
+                                    host_rewrite_literal: www.google.com
+                                - match:
+                                    headers:
+                                        - exact_match: bing.com
+                                          name: :authority
+                                    prefix: /
+                                  route:
+                                    cluster: bing
+                                    host_rewrite_literal: www.bing.com
+                    stat_prefix: ingress_http
