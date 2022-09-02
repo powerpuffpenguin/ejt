@@ -1,6 +1,8 @@
 package converter
 
 import (
+	"bytes"
+	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -154,11 +156,46 @@ func (c *Converter) get(endpoint *configure.Endpoint, resource string) (src, dst
 	dst = filepath.Join(endpoint.Target, name)
 	return
 }
+func (c *Converter) md5(filename string) (b []byte, e error) {
+	f, e := os.Open(filename)
+	if e != nil {
+		return
+	}
+	h := md5.New()
+	_, e = io.Copy(h, f)
+	f.Close()
+	if e != nil {
+		return
+	}
+	b = h.Sum(nil)
+	return
+}
+func (c *Converter) compare(src, dst string) (changed bool) {
+	l, e := c.md5(src)
+	if e != nil {
+		if os.IsNotExist(e) {
+			changed = true
+			return
+		}
+		log.Fatalln(e)
+	}
+	r, e := c.md5(dst)
+	if e != nil {
+		log.Fatalln(e)
+	}
+	changed = !bytes.Equal(l, r)
+	return
+}
 func (c *Converter) move(endpoint *configure.Endpoint, resource string, test bool) {
 	src, dst := c.get(endpoint, resource)
 	if test {
 		log.Println(` # move`, src, `->`, dst)
 	} else {
+		if !c.compare(src, dst) {
+			log.Println(` # not changed`, resource)
+			return
+		}
+
 		os.MkdirAll(filepath.Dir(dst), 0775)
 		e := os.Rename(src, dst)
 		if e != nil {
@@ -171,6 +208,11 @@ func (c *Converter) copy(endpoint *configure.Endpoint, resource string, test boo
 	if test {
 		log.Println(` # copy`, src, `->`, dst)
 	} else {
+		if !c.compare(src, dst) {
+			log.Println(` # not changed`, resource)
+			return
+		}
+
 		r, e := os.OpenFile(src, os.O_RDONLY, 0664)
 		if e != nil {
 			log.Fatalln(e)

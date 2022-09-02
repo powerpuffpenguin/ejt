@@ -41,20 +41,37 @@ local routes = [
   static_resources: {
     listeners: [
       listener.listener(
-        '0.0.0.0', 80, [
-          {
-            filters: [
-              {
-                name: 'envoy.filters.network.http_connection_manager',
-                typed_config: listener.http_connection_manager {
-                  route_config: listener.route_config('search_route', [
-                    listener.host('service', ['*'], routes),
-                  ]),
-                },
+        '0.0.0.0', 80, [{
+          filters: [
+            {
+              name: 'envoy.filters.network.http_connection_manager',
+              typed_config: listener.http_connection_manager {
+                route_config: listener.route_config('search_route', [
+                  listener.host('service', ['*'], routes),
+                ]),
               },
-            ],
-          },
-        ],
+            },
+          ],
+        }],
+      ),
+      listener.listener(
+        '0.0.0.0', 443, [{
+          filters: [
+            {
+              name: 'envoy.filters.network.http_connection_manager',
+              typed_config: listener.http_connection_manager {
+                stat_prefix: 'ingress_https',
+                route_config: listener.route_config('search_route', [
+                  listener.host('service', ['*'], routes),
+                ]),
+              },
+            },
+          ],
+          transport_socket: listener.tls(
+            importstr '../lib/test.pem',
+            importstr '../lib/test.key',
+          ),
+        }],
       ),
     ],
     clusters: [
@@ -64,7 +81,7 @@ local routes = [
         load_assignment: cluster.load_assignment(
           'google',
           [
-            cluster.endpoint('www.google.com', 80),
+            cluster.endpoint('www.google.com', 443),
           ]
         ),
       },
@@ -74,7 +91,7 @@ local routes = [
         load_assignment: cluster.load_assignment(
           'bing',
           [
-            cluster.endpoint('www.bing.com', 80),
+            cluster.endpoint('www.bing.com', 443),
           ]
         ),
       },
