@@ -9,9 +9,9 @@ import (
 
 func init() {
 	var (
-		test bool
-		move bool
-		copy bool
+		test,
+		move, copy,
+		replace bool
 	)
 	cmd := &cobra.Command{
 		Use:   `yaml`,
@@ -21,12 +21,13 @@ func init() {
 			if e != nil {
 				log.Fatalln(e)
 			}
-			c.Yaml(test, move, copy)
+			c.Yaml(test, move, copy, replace)
 		},
 	}
 	flags := cmd.Flags()
 	flags.BoolVarP(&test, `test`, `t`, false, `test and println yaml to stdout`)
 	flags.BoolVarP(&move, `move`, `m`, false, `move yaml to target`)
 	flags.BoolVarP(&copy, `copy`, `c`, false, `copy yaml to target`)
+	flags.BoolVarP(&replace, `replace`, `r`, false, `replacement target does not need to compare whether it has changed`)
 	rootCmd.AddCommand(cmd)
 }

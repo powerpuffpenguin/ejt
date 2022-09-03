@@ -78,32 +78,48 @@ func New() (c *Converter, e error) {
 	}
 	return
 }
-func (c *Converter) Yaml(test, move, copy bool) {
-	cnf := c.cnf
+func (c *Converter) Yaml(test, move, copy, replace bool) {
+	var (
+		cnf   = c.cnf
+		hashs [][]byte
+		hash  []byte
+	)
 	for i := 0; i < len(cnf.Endpoints); i++ {
 		endpoint := &cnf.Endpoints[i]
 		if len(endpoint.Resources) != 0 {
 			log.Printf("yaml endpoints[%d] from %s\n", i, endpoint.Source)
+			if test {
+				hashs = make([][]byte, len(endpoint.Resources))
+			}
 			for j, resource := range endpoint.Resources {
 				log.Printf(" - %-2d %s\n", j, resource)
-				c.yaml(endpoint, resource, test)
+				hash = c.yaml(endpoint, resource, test)
+				if test {
+					hashs[j] = hash
+				}
 			}
 
 			if move {
 				for j, resource := range endpoint.Resources {
 					log.Printf(" - %-2d move %s\n", j, resource)
-					c.move(endpoint, resource, test)
+					if test {
+						hash = hashs[j]
+					}
+					c.move(endpoint, resource, hash, test, replace)
 				}
 			} else if copy {
 				for j, resource := range endpoint.Resources {
 					log.Printf(" - %-2d copy %s\n", j, resource)
-					c.copy(endpoint, resource, test)
+					if test {
+						hash = hashs[j]
+					}
+					c.copy(endpoint, resource, hash, test, replace)
 				}
 			}
 		}
 	}
 }
-func (c *Converter) yaml(endpoint *configure.Endpoint, resource string, test bool) {
+func (c *Converter) yaml(endpoint *configure.Endpoint, resource string, test bool) (hash []byte) {
 	filename := filepath.Clean(filepath.Join(endpoint.Source, resource))
 	if !strings.HasPrefix(filename, endpoint.Prefix) {
 		log.Fatalln("resource illegal")
@@ -124,6 +140,8 @@ func (c *Converter) yaml(endpoint *configure.Endpoint, resource string, test boo
 	}
 	if test {
 		fmt.Println(string(b))
+		h := md5.Sum(b)
+		hash = h[:]
 		return
 	}
 
@@ -139,6 +157,7 @@ func (c *Converter) yaml(endpoint *configure.Endpoint, resource string, test boo
 	if e != nil {
 		log.Fatalln(e)
 	}
+	return
 }
 func (c *Converter) get(endpoint *configure.Endpoint, resource string) (src, dst string) {
 	filename := filepath.Clean(filepath.Join(endpoint.Source, resource))
@@ -186,12 +205,27 @@ func (c *Converter) compare(src, dst string) (changed bool) {
 	changed = !bytes.Equal(l, r)
 	return
 }
-func (c *Converter) move(endpoint *configure.Endpoint, resource string, test bool) {
+func (c *Converter) compareHash(src []byte, dst string) (changed bool) {
+	l, e := c.md5(dst)
+	if e != nil {
+		if os.IsNotExist(e) {
+			changed = true
+			return
+		}
+		log.Fatalln(e)
+	}
+	changed = !bytes.Equal(l, src)
+	return
+}
+func (c *Converter) move(endpoint *configure.Endpoint, resource string, hash []byte, test, replace bool) {
 	src, dst := c.get(endpoint, resource)
 	if test {
-		log.Println(` # move`, src, `->`, dst)
+		if !replace && !c.compareHash(hash, dst) {
+			log.Println(` # not changed`, resource)
+			return
+		}
 	} else {
-		if !c.compare(src, dst) {
+		if !replace && !c.compare(src, dst) {
 			log.Println(` # not changed`, resource)
 			return
 		}
@@ -203,12 +237,15 @@ func (c *Converter) move(endpoint *configure.Endpoint, resource string, test boo
 		}
 	}
 }
-func (c *Converter) copy(endpoint *configure.Endpoint, resource string, test bool) {
+func (c *Converter) copy(endpoint *configure.Endpoint, resource string, hash []byte, test, replace bool) {
 	src, dst := c.get(endpoint, resource)
 	if test {
-		log.Println(` # copy`, src, `->`, dst)
+		if !replace && !c.compareHash(hash, dst) {
+			log.Println(` # not changed`, resource)
+			return
+		}
 	} else {
-		if !c.compare(src, dst) {
+		if !replace && !c.compare(src, dst) {
 			log.Println(` # not changed`, resource)
 			return
 		}
