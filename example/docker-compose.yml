@@ -8,3 +8,11 @@ services:
       - "9443:443"
     volumes:
       - ./envoy/static:/etc/envoy:ro
+  dynamic:
+    image: envoyproxy/envoy:v1.22.5
+    restart: always
+    ports:
+      - "6000:80"
+      - "6443:443"
+    volumes:
+      - ./envoy/dynamic:/etc/envoy:ro

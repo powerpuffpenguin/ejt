@@ -7,6 +7,9 @@
       source: './src',  // source root directory.
       resources: [
         'static/envoy.jsonnet',
+        'dynamic/envoy.jsonnet',
+        'dynamic/cds.jsonnet',
+        'dynamic/lds.jsonnet',
       ],
     },
   ],

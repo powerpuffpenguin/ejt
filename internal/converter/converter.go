@@ -171,7 +171,7 @@ func (c *Converter) md5(filename string) (b []byte, e error) {
 	return
 }
 func (c *Converter) compare(src, dst string) (changed bool) {
-	l, e := c.md5(src)
+	l, e := c.md5(dst)
 	if e != nil {
 		if os.IsNotExist(e) {
 			changed = true
@@ -179,7 +179,7 @@ func (c *Converter) compare(src, dst string) (changed bool) {
 		}
 		log.Fatalln(e)
 	}
-	r, e := c.md5(dst)
+	r, e := c.md5(src)
 	if e != nil {
 		log.Fatalln(e)
 	}

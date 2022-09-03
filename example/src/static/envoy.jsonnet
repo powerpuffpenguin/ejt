@@ -8,7 +8,7 @@ local routes = [
       headers: [
         {
           name: ':authority',
-          exact_match: 'google.com',
+          string_match: { exact: 'google.com' },
         },
       ],
     },
@@ -23,7 +23,7 @@ local routes = [
       headers: [
         {
           name: ':authority',
-          exact_match: 'bing.com',
+          string_match: { exact: 'bing.com' },
         },
       ],
     },

@@ -68,16 +68,18 @@ static_resources:
                               routes:
                                 - match:
                                     headers:
-                                        - exact_match: google.com
-                                          name: :authority
+                                        - name: :authority
+                                          string_match:
+                                            exact: google.com
                                     prefix: /
                                   route:
                                     cluster: google
                                     host_rewrite_literal: www.google.com
                                 - match:
                                     headers:
-                                        - exact_match: bing.com
-                                          name: :authority
+                                        - name: :authority
+                                          string_match:
+                                            exact: bing.com
                                     prefix: /
                                   route:
                                     cluster: bing
@@ -110,16 +112,18 @@ static_resources:
                               routes:
                                 - match:
                                     headers:
-                                        - exact_match: google.com
-                                          name: :authority
+                                        - name: :authority
+                                          string_match:
+                                            exact: google.com
                                     prefix: /
                                   route:
                                     cluster: google
                                     host_rewrite_literal: www.google.com
                                 - match:
                                     headers:
-                                        - exact_match: bing.com
-                                          name: :authority
+                                        - name: :authority
+                                          string_match:
+                                            exact: bing.com
                                     prefix: /
                                   route:
                                     cluster: bing
