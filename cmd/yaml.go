@@ -21,7 +21,7 @@ func init() {
 			if e != nil {
 				log.Fatalln(e)
 			}
-			c.Yaml(test, move, copy, replace)
+			c.Convert(converter.YamlMarshaler{}, test, move, copy, replace)
 		},
 	}
 	flags := cmd.Flags()

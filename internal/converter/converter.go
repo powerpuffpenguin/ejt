@@ -16,7 +16,6 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/powerpuffpenguin/ejt/configure"
-	"gopkg.in/yaml.v3"
 )
 
 type Converter struct {
@@ -78,7 +77,7 @@ func New() (c *Converter, e error) {
 	}
 	return
 }
-func (c *Converter) Yaml(test, move, copy, replace bool) {
+func (c *Converter) Convert(marshaler Marshaler, test, move, copy, replace bool) {
 	var (
 		cnf   = c.cnf
 		hashs [][]byte
@@ -87,13 +86,16 @@ func (c *Converter) Yaml(test, move, copy, replace bool) {
 	for i := 0; i < len(cnf.Endpoints); i++ {
 		endpoint := &cnf.Endpoints[i]
 		if len(endpoint.Resources) != 0 {
-			log.Printf("yaml endpoints[%d] from %s\n", i, endpoint.Source)
+			log.Printf("%s endpoints[%d] from %s\n",
+				marshaler.Tag(),
+				i, endpoint.Source,
+			)
 			if test {
 				hashs = make([][]byte, len(endpoint.Resources))
 			}
 			for j, resource := range endpoint.Resources {
 				log.Printf(" - %-2d %s\n", j, resource)
-				hash = c.yaml(endpoint, resource, test)
+				hash = c.convert(marshaler, endpoint, resource, test)
 				if test {
 					hashs[j] = hash
 				}
@@ -105,7 +107,7 @@ func (c *Converter) Yaml(test, move, copy, replace bool) {
 					if test {
 						hash = hashs[j]
 					}
-					c.move(endpoint, resource, hash, test, replace)
+					c.move(marshaler, endpoint, resource, hash, test, replace)
 				}
 			} else if copy {
 				for j, resource := range endpoint.Resources {
@@ -113,13 +115,13 @@ func (c *Converter) Yaml(test, move, copy, replace bool) {
 					if test {
 						hash = hashs[j]
 					}
-					c.copy(endpoint, resource, hash, test, replace)
+					c.copy(marshaler, endpoint, resource, hash, test, replace)
 				}
 			}
 		}
 	}
 }
-func (c *Converter) yaml(endpoint *configure.Endpoint, resource string, test bool) (hash []byte) {
+func (c *Converter) convert(marshaler Marshaler, endpoint *configure.Endpoint, resource string, test bool) (hash []byte) {
 	filename := filepath.Clean(filepath.Join(endpoint.Source, resource))
 	if !strings.HasPrefix(filename, endpoint.Prefix) {
 		log.Fatalln("resource illegal")
@@ -134,7 +136,7 @@ func (c *Converter) yaml(endpoint *configure.Endpoint, resource string, test boo
 	if e != nil {
 		log.Fatalln(e)
 	}
-	b, e := yaml.Marshal(&m)
+	b, e := marshaler.Marshal(&m)
 	if e != nil {
 		log.Fatalln(e)
 	}
@@ -150,7 +152,7 @@ func (c *Converter) yaml(endpoint *configure.Endpoint, resource string, test boo
 	if ext != `` {
 		name = name[:len(name)-len(ext)]
 	}
-	name += `.yaml`
+	name += marshaler.Ext()
 	output := filepath.Join(endpoint.Output, name)
 	os.MkdirAll(filepath.Dir(output), 0775)
 	e = ioutil.WriteFile(output, b, 0644)
@@ -159,7 +161,7 @@ func (c *Converter) yaml(endpoint *configure.Endpoint, resource string, test boo
 	}
 	return
 }
-func (c *Converter) get(endpoint *configure.Endpoint, resource string) (src, dst string) {
+func (c *Converter) get(marshaler Marshaler, endpoint *configure.Endpoint, resource string) (src, dst string) {
 	filename := filepath.Clean(filepath.Join(endpoint.Source, resource))
 	if !strings.HasPrefix(filename, endpoint.Prefix) {
 		log.Fatalln("resource illegal")
@@ -169,7 +171,7 @@ func (c *Converter) get(endpoint *configure.Endpoint, resource string) (src, dst
 	if ext != `` {
 		name = name[:len(name)-len(ext)]
 	}
-	name += `.yaml`
+	name += marshaler.Ext()
 
 	src = filepath.Join(endpoint.Output, name)
 	dst = filepath.Join(endpoint.Target, name)
@@ -217,8 +219,8 @@ func (c *Converter) compareHash(src []byte, dst string) (changed bool) {
 	changed = !bytes.Equal(l, src)
 	return
 }
-func (c *Converter) move(endpoint *configure.Endpoint, resource string, hash []byte, test, replace bool) {
-	src, dst := c.get(endpoint, resource)
+func (c *Converter) move(marshaler Marshaler, endpoint *configure.Endpoint, resource string, hash []byte, test, replace bool) {
+	src, dst := c.get(marshaler, endpoint, resource)
 	if test {
 		if !replace && !c.compareHash(hash, dst) {
 			log.Println(` # not changed`, resource)
@@ -237,8 +239,8 @@ func (c *Converter) move(endpoint *configure.Endpoint, resource string, hash []b
 		}
 	}
 }
-func (c *Converter) copy(endpoint *configure.Endpoint, resource string, hash []byte, test, replace bool) {
-	src, dst := c.get(endpoint, resource)
+func (c *Converter) copy(marshaler Marshaler, endpoint *configure.Endpoint, resource string, hash []byte, test, replace bool) {
+	src, dst := c.get(marshaler, endpoint, resource)
 	if test {
 		if !replace && !c.compareHash(hash, dst) {
 			log.Println(` # not changed`, resource)

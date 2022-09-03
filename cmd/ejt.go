@@ -11,7 +11,7 @@ import (
 func init() {
 	cmd := &cobra.Command{
 		Use:   `init`,
-		Short: `Initializes a ejt project and creates a ejt.json file.`,
+		Short: `Initializes a ejt project and creates a ejt.jsonnet file.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			f, e := os.OpenFile(`ejt.jsonnet`, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
 			if e != nil {
