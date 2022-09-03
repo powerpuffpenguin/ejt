@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/go-jsonnet"
+	"github.com/powerpuffpenguin/ejt/internal/fix"
 )
 
 type Configure struct {
@@ -25,6 +26,7 @@ func (c *Configure) String() string {
 
 func (c *Configure) Load(filename string) (e error) {
 	vm := jsonnet.MakeVM()
+	vm.Importer(&fix.FileImporter{})
 	jsonStr, e := vm.EvaluateFile(filename)
 	if e != nil {
 		return

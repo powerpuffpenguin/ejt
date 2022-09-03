@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/powerpuffpenguin/ejt/internal/fix"
+
 	"github.com/google/go-jsonnet"
 	"github.com/powerpuffpenguin/ejt/configure"
 )
@@ -127,6 +129,7 @@ func (c *Converter) convert(marshaler Marshaler, endpoint *configure.Endpoint, r
 		log.Fatalln("resource illegal")
 	}
 	vm := jsonnet.MakeVM()
+	vm.Importer(&fix.FileImporter{})
 	jsonStr, e := vm.EvaluateFile(filename)
 	if e != nil {
 		log.Fatalln(e)
