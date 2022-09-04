@@ -118,12 +118,11 @@ if [[ -f "$name" ]];then
 fi
 source=(
     "$target"
-    etc
 )
 exec="${args[@]} ${source[@]}"
 echo $exec
 eval "$exec >> /dev/null"
 
-exec="sha256sum $name > $name.sha256.txt"
+exec="sha256sum $name > $name.sha256"
 echo $exec
 eval "$exec"
