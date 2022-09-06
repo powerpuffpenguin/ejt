@@ -12,12 +12,13 @@ func init() {
 		test,
 		move, copy,
 		replace, pretty bool
+		extStrs []string
 	)
 	cmd := &cobra.Command{
 		Use:   `json`,
 		Short: `Convert jsonnet to json.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			c, e := converter.New()
+			c, e := converter.New(extStrs)
 			if e != nil {
 				log.Fatalln(e)
 			}
@@ -34,5 +35,6 @@ func init() {
 	flags.BoolVarP(&copy, `copy`, `c`, false, `copy json to target`)
 	flags.BoolVarP(&replace, `replace`, `r`, false, `replacement target does not need to compare whether it has changed`)
 	flags.BoolVarP(&pretty, `pretty`, `p`, false, `output pretty json`)
+	flags.StringSliceVarP(&extStrs, `ext-str`, `V`, nil, `<var>[=<val>]     If <val> is omitted, get from environment var <var>`)
 	rootCmd.AddCommand(cmd)
 }

@@ -22,9 +22,10 @@ import (
 
 type Converter struct {
 	cnf *configure.Configure
+	vm  *jsonnet.VM
 }
 
-func New() (c *Converter, e error) {
+func New(extStrs []string) (c *Converter, e error) {
 	pwd, e := filepath.Abs(".")
 	if e != nil {
 		return
@@ -74,8 +75,19 @@ func New() (c *Converter, e error) {
 		}
 	}
 
+	vm := jsonnet.MakeVM()
+	vm.Importer(&fix.FileImporter{})
+	for _, str := range extStrs {
+		index := strings.Index(str, `=`)
+		if index == -1 {
+			vm.ExtVar(str, os.Getenv(str))
+		} else {
+			vm.ExtVar(str[:index], str[index+1:])
+		}
+	}
 	c = &Converter{
 		cnf: &cnf,
+		vm:  vm,
 	}
 	return
 }
@@ -123,14 +135,14 @@ func (c *Converter) Convert(marshaler Marshaler, test, move, copy, replace bool)
 		}
 	}
 }
+
 func (c *Converter) convert(marshaler Marshaler, endpoint *configure.Endpoint, resource string, test bool) (hash []byte) {
 	filename := filepath.Clean(filepath.Join(endpoint.Source, resource))
 	if !strings.HasPrefix(filename, endpoint.Prefix) {
 		log.Fatalln("resource illegal")
 	}
-	vm := jsonnet.MakeVM()
-	vm.Importer(&fix.FileImporter{})
-	jsonStr, e := vm.EvaluateFile(filename)
+
+	jsonStr, e := c.vm.EvaluateFile(filename)
 	if e != nil {
 		log.Fatalln(e)
 	}

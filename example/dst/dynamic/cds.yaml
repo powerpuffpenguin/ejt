@@ -1,0 +1,37 @@
+resources:
+    - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
+      connect_timeout: 1s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: google
+        endpoints:
+            - lb_endpoints:
+                - endpoint:
+                    address:
+                        socket_address:
+                            address: www.google.com
+                            port_value: 443
+      name: google
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+            '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+      type: LOGICAL_DNS
+    - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
+      connect_timeout: 1s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: bing
+        endpoints:
+            - lb_endpoints:
+                - endpoint:
+                    address:
+                        socket_address:
+                            address: www.bing.com
+                            port_value: 443
+      name: bing
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+            '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+      type: LOGICAL_DNS
