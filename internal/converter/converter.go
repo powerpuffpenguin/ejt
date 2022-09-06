@@ -14,15 +14,30 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/powerpuffpenguin/ejt/internal/fix"
-
 	"github.com/google/go-jsonnet"
 	"github.com/powerpuffpenguin/ejt/configure"
+	"github.com/powerpuffpenguin/ejt/internal/fix"
 )
 
+func parseExtVar(str string, exists map[string]string) (k, v string) {
+	index := strings.Index(str, `=`)
+	if index == -1 {
+		k = str
+		var found bool
+		if v, found = exists[k]; found {
+			return
+		}
+		v = os.Getenv(str)
+	} else {
+		k = str[:index]
+		v = str[index+1:]
+	}
+	return
+}
+
 type Converter struct {
-	cnf *configure.Configure
-	vm  *jsonnet.VM
+	cnf     *configure.Configure
+	keyStrs map[string]string
 }
 
 func New(extStrs []string) (c *Converter, e error) {
@@ -75,19 +90,30 @@ func New(extStrs []string) (c *Converter, e error) {
 		}
 	}
 
-	vm := jsonnet.MakeVM()
-	vm.Importer(&fix.FileImporter{})
+	keyStrs := make(map[string]string, len(cnf.ExtStrs)+len(extStrs))
+	for _, str := range cnf.ExtStrs {
+		k, v := parseExtVar(str, nil)
+		keyStrs[k] = v
+	}
 	for _, str := range extStrs {
-		index := strings.Index(str, `=`)
-		if index == -1 {
-			vm.ExtVar(str, os.Getenv(str))
-		} else {
-			vm.ExtVar(str[:index], str[index+1:])
-		}
+		k, v := parseExtVar(str, nil)
+		keyStrs[k] = v
 	}
 	c = &Converter{
-		cnf: &cnf,
-		vm:  vm,
+		cnf:     &cnf,
+		keyStrs: keyStrs,
+	}
+	return
+}
+
+func (c *Converter) vm(endpoint *configure.Endpoint) (vm *jsonnet.VM) {
+	vm = jsonnet.MakeVM()
+	vm.Importer(&fix.FileImporter{})
+	for k, v := range c.keyStrs {
+		vm.ExtVar(k, v)
+	}
+	for _, str := range endpoint.ExtStrs {
+		vm.ExtVar(parseExtVar(str, nil))
 	}
 	return
 }
@@ -107,9 +133,10 @@ func (c *Converter) Convert(marshaler Marshaler, test, move, copy, replace bool)
 			if test {
 				hashs = make([][]byte, len(endpoint.Resources))
 			}
+			vm := c.vm(endpoint)
 			for j, resource := range endpoint.Resources {
 				log.Printf(" - %-2d %s\n", j, resource)
-				hash = c.convert(marshaler, endpoint, resource, test)
+				hash = c.convert(vm, marshaler, endpoint, resource, test)
 				if test {
 					hashs[j] = hash
 				}
@@ -136,13 +163,13 @@ func (c *Converter) Convert(marshaler Marshaler, test, move, copy, replace bool)
 	}
 }
 
-func (c *Converter) convert(marshaler Marshaler, endpoint *configure.Endpoint, resource string, test bool) (hash []byte) {
+func (c *Converter) convert(vm *jsonnet.VM, marshaler Marshaler, endpoint *configure.Endpoint, resource string, test bool) (hash []byte) {
 	filename := filepath.Clean(filepath.Join(endpoint.Source, resource))
 	if !strings.HasPrefix(filename, endpoint.Prefix) {
 		log.Fatalln("resource illegal")
 	}
 
-	jsonStr, e := c.vm.EvaluateFile(filename)
+	jsonStr, e := vm.EvaluateFile(filename)
 	if e != nil {
 		log.Fatalln(e)
 	}

@@ -20,6 +20,10 @@ func init() {
 			defer f.Close()
 			_, e = f.WriteString(`{
   version: '` + version.Version + `',
+  ext_strs: [  // std.extVar(key)
+    'USER',  // get from environment
+    'Generator=ejt',  // set <key>=<val>
+  ],
   endpoints: [
     {
       output: './dst',  // redirect output structure to the directory.
@@ -27,6 +31,9 @@ func init() {
       source: './src',  // source root directory.
       resources: [
         'envoy.jsonnet',
+      ],
+      ext_strs: [
+        'endpoint=envoy',
       ],
     },
   ],

@@ -11,6 +11,7 @@ import (
 type Configure struct {
 	Version   string     `json:"version"`
 	Endpoints []Endpoint `json:"endpoints"`
+	ExtStrs   []string   `json:"ext_strs"`
 }
 
 func (c *Configure) String() string {
@@ -44,6 +45,8 @@ type Endpoint struct {
 	Source    string   `json:"source"`
 	Resources []string `json:"resources"`
 	Prefix    string   `json:"-"`
+
+	ExtStrs []string `json:"ext_strs"`
 }
 
 func (ep *Endpoint) Format(dir string) (e error) {
