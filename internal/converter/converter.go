@@ -273,9 +273,24 @@ func (c *Converter) move(marshaler Marshaler, endpoint *configure.Endpoint, reso
 			log.Println(` # not changed`, resource)
 			return
 		}
-
+		r, e := os.OpenFile(src, os.O_RDONLY, 0664)
+		if e != nil {
+			log.Fatalln(e)
+		}
+		defer r.Close()
 		os.MkdirAll(filepath.Dir(dst), 0775)
-		e := os.Rename(src, dst)
+		temp := dst + `.temp`
+		w, e := os.Create(temp)
+		if e != nil {
+			log.Fatalln(e)
+		}
+		_, e = io.Copy(w, r)
+		w.Close()
+		if e != nil {
+			log.Fatalln(e)
+		}
+
+		e = os.Rename(temp, dst)
 		if e != nil {
 			log.Fatalln(e)
 		}

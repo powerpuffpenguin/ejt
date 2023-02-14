@@ -1,7 +1,7 @@
 Target="ejt"
 Docker="king011/envoy-ejt"
 Dir=$(cd "$(dirname $BASH_SOURCE)/.." && pwd)
-Version="v0.0.2"
+Version="v0.0.3"
 View=0
 Platforms=(
     darwin/amd64
