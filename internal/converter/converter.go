@@ -40,7 +40,7 @@ type Converter struct {
 	keyStrs map[string]string
 }
 
-func New(extStrs []string) (c *Converter, e error) {
+func New(extStrs, jpath []string) (c *Converter, e error) {
 	pwd, e := filepath.Abs(".")
 	if e != nil {
 		return
@@ -72,7 +72,7 @@ func New(extStrs []string) (c *Converter, e error) {
 			continue
 		}
 
-		e = cnf.Load(pwd, `ejt.jsonnet`)
+		e = cnf.Load(pwd, `ejt.jsonnet`, jpath)
 		if e != nil {
 			return
 		}

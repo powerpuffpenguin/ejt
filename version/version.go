@@ -1,7 +1,7 @@
 package version
 
 var (
-	Version = `v0.0.3`
-	Commit = `4b1cb2c6b27681e7feebad0c85b8d1b59b7e0b47`
-	Date = `2023-02-14 08:08:56`
+	Version = `v0.0.4`
+	Commit = `ebb0a47e5732e59733c546eca4252c7bc04c93fd`
+	Date = `2023-03-24 03:30:42`
 )

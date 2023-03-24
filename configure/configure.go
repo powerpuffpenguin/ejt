@@ -27,7 +27,7 @@ func (c *Configure) String() string {
 	return string(b)
 }
 
-func (c *Configure) Load(dir, filename string) (e error) {
+func (c *Configure) Load(dir, filename string, jpath0 []string) (e error) {
 	vm := jsonnet.MakeVM()
 	vm.Importer(&fix.FileImporter{})
 	jsonStr, e := vm.EvaluateFile(filepath.Join(dir, filename))
@@ -42,6 +42,18 @@ func (c *Configure) Load(dir, filename string) (e error) {
 		keys  = make(map[string]bool)
 		jpath []string
 	)
+	for _, s := range jpath0 {
+		if filepath.IsAbs(s) {
+			s = filepath.Clean(s)
+		} else {
+			s = filepath.Join(dir, s)
+		}
+		if keys[s] {
+			continue
+		}
+		keys[s] = true
+		jpath = append(jpath, s)
+	}
 	for _, s := range c.JPath {
 		if filepath.IsAbs(s) {
 			s = filepath.Clean(s)

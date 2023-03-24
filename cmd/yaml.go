@@ -12,13 +12,13 @@ func init() {
 		test,
 		move, copy,
 		replace bool
-		extStrs []string
+		extStrs, jpath []string
 	)
 	cmd := &cobra.Command{
 		Use:   `yaml`,
 		Short: `Convert jsonnet to yaml.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			c, e := converter.New(extStrs)
+			c, e := converter.New(extStrs, jpath)
 			if e != nil {
 				log.Fatalln(e)
 			}
@@ -31,5 +31,6 @@ func init() {
 	flags.BoolVarP(&copy, `copy`, `c`, false, `copy yaml to target`)
 	flags.BoolVarP(&replace, `replace`, `r`, false, `replacement target does not need to compare whether it has changed`)
 	flags.StringSliceVarP(&extStrs, `ext-str`, `V`, nil, `<var>[=<val>]     If <val> is omitted, get from environment var <var>`)
+	flags.StringSliceVarP(&jpath, `jpath`, `J`, nil, `specify an additional library search dir`)
 	rootCmd.AddCommand(cmd)
 }
