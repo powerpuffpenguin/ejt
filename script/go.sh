@@ -98,6 +98,7 @@ fi
 
 export GOOS="$os"
 export GOARCH="$arch"
+export CGO_ENABLED=0
 target="$Target"
 if [[ "$debug" == 1 ]];then
     target="$target"d
