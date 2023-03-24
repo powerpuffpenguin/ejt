@@ -2,6 +2,7 @@ package configure
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 
 	"github.com/google/go-jsonnet"
@@ -12,6 +13,7 @@ type Configure struct {
 	Version   string     `json:"version"`
 	Endpoints []Endpoint `json:"endpoints"`
 	ExtStrs   []string   `json:"ext_strs"`
+	JPath     []string   `json:"jpath"`
 }
 
 func (c *Configure) String() string {
@@ -25,10 +27,10 @@ func (c *Configure) String() string {
 	return string(b)
 }
 
-func (c *Configure) Load(filename string) (e error) {
+func (c *Configure) Load(dir, filename string) (e error) {
 	vm := jsonnet.MakeVM()
 	vm.Importer(&fix.FileImporter{})
-	jsonStr, e := vm.EvaluateFile(filename)
+	jsonStr, e := vm.EvaluateFile(filepath.Join(dir, filename))
 	if e != nil {
 		return
 	}
@@ -36,6 +38,58 @@ func (c *Configure) Load(filename string) (e error) {
 	if e != nil {
 		return
 	}
+	var (
+		keys  = make(map[string]bool)
+		jpath []string
+	)
+	for _, s := range c.JPath {
+		if filepath.IsAbs(s) {
+			s = filepath.Clean(s)
+		} else {
+			s = filepath.Join(dir, s)
+		}
+		if keys[s] {
+			continue
+		}
+		keys[s] = true
+		jpath = append(jpath, s)
+	}
+	c.JPath = jpath
+
+	for i := 0; i < len(c.Endpoints); i++ {
+		endpoint := &c.Endpoints[i]
+		e = c.format(dir, endpoint, jpath)
+		if e != nil {
+			return
+		}
+	}
+	return
+}
+func (c *Configure) format(dir string, endpoint *Endpoint, jpath0 []string) (e error) {
+	if len(endpoint.Resources) == 0 {
+		return
+	}
+	jpath := append([]string{}, jpath0...)
+
+	keys := make(map[string]bool, len(jpath)+len(endpoint.JPath))
+	for _, k := range jpath {
+		keys[k] = true
+	}
+
+	for _, s := range endpoint.JPath {
+		if filepath.IsAbs(s) {
+			s = filepath.Clean(s)
+		} else {
+			s = filepath.Join(dir, s)
+		}
+		if keys[s] {
+			continue
+		}
+		keys[s] = true
+		jpath = append(jpath, s)
+	}
+	endpoint.JPath = jpath
+	fmt.Println(jpath)
 	return
 }
 
@@ -47,6 +101,7 @@ type Endpoint struct {
 	Prefix    string   `json:"-"`
 
 	ExtStrs []string `json:"ext_strs"`
+	JPath   []string `json:"jpath"`
 }
 
 func (ep *Endpoint) Format(dir string) (e error) {

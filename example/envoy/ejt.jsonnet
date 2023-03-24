@@ -2,7 +2,8 @@
   version: 'v0.0.2',
   ext_strs: [  // std.extVar(key)
     'USER',  // get from environment
-    'Generator=ejt',  // set <key>=<val>
+    // set <key>=<val>
+    'Generator=ejt',  
   ],
   endpoints: [
     {

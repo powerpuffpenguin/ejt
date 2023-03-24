@@ -72,7 +72,7 @@ func New(extStrs []string) (c *Converter, e error) {
 			continue
 		}
 
-		e = cnf.Load(filepath.Join(pwd, `ejt.jsonnet`))
+		e = cnf.Load(pwd, `ejt.jsonnet`)
 		if e != nil {
 			return
 		}
@@ -108,7 +108,9 @@ func New(extStrs []string) (c *Converter, e error) {
 
 func (c *Converter) vm(endpoint *configure.Endpoint) (vm *jsonnet.VM) {
 	vm = jsonnet.MakeVM()
-	vm.Importer(&fix.FileImporter{})
+	vm.Importer(&fix.FileImporter{
+		JPaths: endpoint.JPath,
+	})
 	for k, v := range c.keyStrs {
 		vm.ExtVar(k, v)
 	}
