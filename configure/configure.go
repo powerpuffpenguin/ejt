@@ -2,7 +2,6 @@ package configure
 
 import (
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 
 	"github.com/google/go-jsonnet"
@@ -101,7 +100,6 @@ func (c *Configure) format(dir string, endpoint *Endpoint, jpath0 []string) (e e
 		jpath = append(jpath, s)
 	}
 	endpoint.JPath = jpath
-	fmt.Println(jpath)
 	return
 }
 
