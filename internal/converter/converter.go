@@ -117,6 +117,9 @@ func (c *Converter) vm(endpoint *configure.Endpoint) (vm *jsonnet.VM) {
 	for _, str := range endpoint.ExtStrs {
 		vm.ExtVar(parseExtVar(str, nil))
 	}
+	for _, f := range nativeFuncs {
+		vm.NativeFunction(f)
+	}
 	return
 }
 func (c *Converter) Convert(marshaler Marshaler, test, move, copy, replace bool) {

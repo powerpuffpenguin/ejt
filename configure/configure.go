@@ -3,9 +3,11 @@ package configure
 import (
 	"encoding/json"
 	"path/filepath"
+	"runtime"
 
 	"github.com/google/go-jsonnet"
 	"github.com/powerpuffpenguin/ejt/internal/fix"
+	"github.com/powerpuffpenguin/ejt/version"
 )
 
 type Configure struct {
@@ -66,7 +68,15 @@ func (c *Configure) Load(dir, filename string, jpath0 []string) (e error) {
 		jpath = append(jpath, s)
 	}
 	c.JPath = jpath
-
+	c.ExtStrs = append([]string{
+		`dev=0`,
+		`ejt.version=` + version.Version,
+		`ejt.os=` + runtime.GOOS,
+		`ejt.arch=` + runtime.GOARCH,
+		`ejt.go_version=` + runtime.Version(),
+		`ejt.dir=` + dir,
+		`ejt.jsonnet=` + jsonnet.Version(),
+	}, c.ExtStrs...)
 	for i := 0; i < len(c.Endpoints); i++ {
 		endpoint := &c.Endpoints[i]
 		e = c.format(dir, endpoint, jpath)

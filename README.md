@@ -41,3 +41,41 @@ After writing your jsonnet, execute the following command to generate yaml and m
 ```
 ejt yaml -m
 ```
+
+# std.extVar
+
+Several default extension variables are provided since v0.0.5, which can be obtained using std.extVar
+
+```
+std.extVar('dev')
+```
+
+| var            | type   | value                   |
+| -------------- | ------ | ----------------------- |
+| dev            | string | 0                       |
+| ejt.version    | string | ejt build version       |
+| ejt.os         | string | ejt build os            |
+| ejt.arcg       | string | ejt build arch          |
+| ejt.go_version | string | ejt build by go version |
+| ejt.jsonnet | string | ejt used jsonnet version |
+| ejt.dir        | string | ejt.jsonnet project dir |
+
+# std.native
+
+Several extended native functions are provided starting from v0.0.5, which can be called using std.native
+
+```
+std.native('os.readText')('a.txt')
+```
+
+```
+function os.readText(filename: string): string
+
+function filepath.join(dir: string, name:string): string
+function filepath.clean(filename: string): string
+function filepath.abs(filename: string): string
+function filepath.isAbs(filename: string): boolean
+function filepath.base(filename: string): string
+function filepath.dir(filename: string): string
+function filepath.ext(filename: string): string
+```

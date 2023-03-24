@@ -41,3 +41,41 @@ ejt init
 ```
 ejt yaml -m
 ```
+
+# std.extVar
+
+從 v0.0.5 開始提供了幾個默認的擴展變量，可以使用 std.extVar 獲取
+
+```
+std.extVar('dev')
+```
+
+| var            | type   | value                   |
+| -------------- | ------ | ----------------------- |
+| dev            | string | 0                       |
+| ejt.version    | string | ejt build version       |
+| ejt.os         | string | ejt build os            |
+| ejt.arcg       | string | ejt build arch          |
+| ejt.go_version | string | ejt build by go version |
+| ejt.jsonnet | string | ejt used jsonnet version |
+| ejt.dir        | string | ejt.jsonnet project dir |
+
+# std.native
+
+從 v0.0.5 開始提供了幾個擴展的本地函數，可以使用 std.native 調用
+
+```
+std.native('os.readText')('a.txt')
+```
+
+```
+function os.readText(filename: string): string
+
+function filepath.join(dir: string, name:string): string
+function filepath.clean(filename: string): string
+function filepath.abs(filename: string): string
+function filepath.isAbs(filename: string): boolean
+function filepath.base(filename: string): string
+function filepath.dir(filename: string): string
+function filepath.ext(filename: string): string
+```
